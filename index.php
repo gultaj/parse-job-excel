@@ -1,9 +1,33 @@
 <?php 
+if (!isset($_FILES['data'])) {
+	
+	?>
+	<form method="post" enctype="multipart/form-data">
+		<input type="file" name="data">
+		<input type="submit" value="Send">
+	</form>
+	<?php
+	die();
+}
+$target_dir = "data/";
+$target_file = $target_dir . time() . basename($_FILES["data"]["name"]);
+if (file_exists($target_file)) {
+    echo "Sorry, file already exists.";
+	die();
+}
+
+if (move_uploaded_file($_FILES["data"]["tmp_name"], $target_file)) {
+    echo "The file ". basename( $_FILES["data"]["name"]). " has been uploaded.";
+} else {
+    echo "Sorry, there was an error uploading your file.";
+}
+unset($_FILES["data"]);
 
 // setlocale(LC_ALL, 'ru_RU.CP1251');
 require "vendor/autoload.php";
 
 $fileName = 'data/Vacancies.xls';
+$fileName = $target_file;
 
 $reader = PHPExcel_IOFactory::createReader( PHPExcel_IOFactory::identify($fileName) );
 $phpExcel = $reader->load($fileName);
@@ -26,6 +50,7 @@ unset($phpExcel);
 
 $email = "/\s?([a-zA-Z0-9_\-\.]+)@?((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)/iu";
 $phone = "/([\d-]{6,11})(,?\s?\(?\w+\)?)?/iu";
+//  ([\d-]{6,11})\s?(\([\w-]+\))?
 
 
 foreach ($vacancies as $key => &$vacancy) {
