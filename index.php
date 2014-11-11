@@ -54,29 +54,42 @@ unset($phpExcel);
 $email = "/\s+(([a-z0-9_\-\.]+)([@.])+([\w\-\.]+)?)/i";
 
 foreach ($vacancies as $key => &$vacancy) {
+	$arr = [];
 	$data = preg_replace("/(гродненская\s*область\s*)?/ui", '', $vacancy[1]);
+	$arr['company'] = trim($vacancy[0]);
+	$arr['vacancy'] = trim($vacancy[2]);
+	$arr['salary'] = trim($vacancy[6]);
+	$arr['date'] = trim($vacancy[7]);
+	$arr['edu'] = mb_strtolower($vacancy[3], 'utf-8');
+	$arr['shift'] = mb_strtolower($vacancy[4], 'utf-8');
+	$arr['time'] = mb_strtolower($vacancy[5], 'utf-8');
 
-	$vacancy[1] = $data;
-	$vacancy[3] = mb_strtolower($vacancy[3], 'utf-8');
-	$vacancy[4] = mb_strtolower($vacancy[4], 'utf-8');
-	$vacancy[5] = mb_strtolower($vacancy[5], 'utf-8');
 	if (preg_match_all($email, $data, $matches)) {
 		$data = preg_replace($email, '', $data);
-		$e = $s = '';
+		$arr['site'] = $arr['email'] = '';
 		foreach ($matches[0] as $value) {
 			if (preg_match("/@/", $value)) {
-				$e .=  (empty($e) ? '' : ', ') . $value ;
+				$arr['email'] .=  (empty($arr['email']) ? '' : ', ') . strtolower(trim($value));
 			} else {
-				$s .=  (empty($s) ? '' : ', ') . $value ;	
+				$arr['site'] .=  (empty($arr['site']) ? '' : ', ') . strtolower(trim($value));	
 			}
 		}
-		$vacancy['site'] = strtolower(trim($s));
-		$vacancy['email'] = strtolower(trim($e));
 	}
 	if (preg_match("/([\d\-]{6,11})+/iu", $data, $matches, PREG_OFFSET_CAPTURE)) {
 		$phone = substr($data, $matches[0][1]);
 		$data = str_replace($phone, '', $data);
-		$vacancy['phone'] = trim($phone);
+		$arr['phone'] = trim($phone);
+	}
+
+	$loc = "/\s?(г[\.\s]+)(\b\w+)/ui";
+	if (preg_match($loc, $data, $matches)) {
+		$data = preg_replace($loc, '', $data);
+		$arr['locate'] = "г. " . mb_convert_case(trim($matches[2]), MB_CASE_TITLE, 'utf-8');
+	}
+	$loc = "/\s(д[\.\s]+)(\b\w+)/ui";
+	if (preg_match($loc, $data, $matches)) {
+		$data = preg_replace($loc, '', $data);
+		$arr['locate'] = "д. " . mb_convert_case(trim($matches[2]), MB_CASE_TITLE, 'utf-8');
 	}
 
 	$data = preg_replace("/\s+\w+@/ui", "", $data);
@@ -87,10 +100,7 @@ foreach ($vacancies as $key => &$vacancy) {
 
 	$data = mb_convert_case($data, MB_CASE_TITLE, 'utf-8');
 
-	if (preg_match("/\s(д[\.\s]+)(\b\w+)/ui", $data, $matches)) {
 
-	}
-	
 	if (preg_match("/(г\.?\s*лида)/ui", $data, $matches)) {
 		$street = preg_replace("/(г\.?\s*лида)/ui", '', $data);
 		// $city = $matches[2];
@@ -109,13 +119,14 @@ foreach ($vacancies as $key => &$vacancy) {
 		$data = "г. Лида, " . $street;
 
 	}
+
 	if (preg_match("/(район)/ui", $data)) {
 		$data = preg_replace("/(район)/ui", 'район, ', $data);
 		$data = preg_replace("/\s+(д\.?\s+)/ui", ' д. ', $data);
 		$data = preg_replace("/\s+(г\s?)/ui", ' г. ', $data);
 		$data = preg_replace("/\s+(ул\s?\s?)/ui", ', ул. ', $data);
 	}
-	$vacancy[1] = $data;
+	$vacancy = $arr;
 	// echo $vacancy[1].'<br>';
 		
 
