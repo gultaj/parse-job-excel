@@ -83,10 +83,14 @@ foreach ($vacancies as $key => &$vacancy) {
 
 	$loc = "/\s?(г[\.\s]+)(\b\w+)/ui";
 	if (preg_match($loc, $data, $matches)) {
+		if (preg_match("/гродно/ui", $matches[2])) {
+			$vacancy = [];
+			continue;
+		};
 		$data = preg_replace($loc, '', $data);
 		$arr['locate'] = "г. " . mb_convert_case(trim($matches[2]), MB_CASE_TITLE, 'utf-8');
 	}
-	$loc = "/\s(д[\.\s]+)(\b\w+)/ui";
+	$loc = "/\s?(д[\.\s]+)(\b\w+)/ui";
 	if (preg_match($loc, $data, $matches)) {
 		$data = preg_replace($loc, '', $data);
 		$arr['locate'] = "д. " . mb_convert_case(trim($matches[2]), MB_CASE_TITLE, 'utf-8');
@@ -97,39 +101,24 @@ foreach ($vacancies as $key => &$vacancy) {
 	$data = preg_replace("/\./ui", ". ", $data);
 	$data = preg_replace("/\s+/ui", " ", $data);
 
+	$data = preg_replace("/лидский район/ui", "", $data);
 
 	$data = mb_convert_case($data, MB_CASE_TITLE, 'utf-8');
+	preg_match("/(\b(ул|пер|проспект)[\s\.]+)/ui", $data, $i);
+	$address = preg_replace_callback("/(\b(ул|пер|проспект)[\s\.]+)/ui", function($matches) {
+		if (!preg_match("/проспект/ui", $matches[1])) {
+			$matches[1] = trim($matches[2]) . ". ";
+		}
+		return mb_strtolower($matches[1], 'utf-8');
 
+	}, $data);
 
-	if (preg_match("/(г\.?\s*лида)/ui", $data, $matches)) {
-		$street = preg_replace("/(г\.?\s*лида)/ui", '', $data);
-		// $city = $matches[2];
-		// echo '<pre>'.print_r($matches, true) . '</pre>';
-		$street = trim($street);
-		
-		$street =  preg_replace_callback("/((ул|пер|проспект)[\.\s])+/ui", function($matches) {
-			if (!preg_match("/(проспект)/ui", $matches[1])) {
-				if (!preg_match("/\./ui", $matches[1])) {
-					$matches[1] = trim($matches[1]).'. ';
-				}
-			}
-			return mb_strtolower($matches[1], 'utf-8');//mb_strtolower($matches[1], 'utf-8');
-		}, $street);
+	// $address = preg_replace("/[а-я](\s+(\d+))/ui", ", $2", $address);
 
-		$data = "г. Лида, " . $street;
+	$arr['address'] = $address;
 
-	}
-
-	if (preg_match("/(район)/ui", $data)) {
-		$data = preg_replace("/(район)/ui", 'район, ', $data);
-		$data = preg_replace("/\s+(д\.?\s+)/ui", ' д. ', $data);
-		$data = preg_replace("/\s+(г\s?)/ui", ' г. ', $data);
-		$data = preg_replace("/\s+(ул\s?\s?)/ui", ', ул. ', $data);
-	}
 	$vacancy = $arr;
-	// echo $vacancy[1].'<br>';
 		
-
 }
 
 echo '<pre>'.print_r($vacancies, true).'</pre>';
