@@ -38,23 +38,38 @@ class ParseExcelJob {
 		foreach ($this->data as $key => $vacancy) {
 			$data = preg_replace("/(гродненская\s*область\s*)?/ui", '', $vacancy[1]);
 			$this->parseCommon($vacancy, $key);
-			$this->parseEmail($data, $key);
-			$this->parsePhone($data, $key);
-			if (!$this->parseLocation($data, $key)) continue;
+			$data = $this->parseEmail($data, $key);
+			$data = $this->parsePhone($data, $key);
+			if (!($data = $this->parseLocation($data, $key))) continue;
 			$data = $this->sanitizeData($data);
 			$this->parseAddress($data, $key);
+			$this->parseDesc($vacancy[2], $key);
 		}
 		return $this;
+	}
+
+	private function formatDate($date) {
+		// return $date;
+		return DateTime::createFromFormat('d.m.Y', $date)->format('Y-m-d');
 	}
 
 	private function parseCommon($data, $key) {
 		$this->parse[$key]['company'] = trim($data[0]);
 		$this->parse[$key]['vacancy'] = trim($data[2]);
 		$this->parse[$key]['salary'] = trim($data[6]);
-		$this->parse[$key]['date'] = trim($data[7]);
+		$this->parse[$key]['date'] = $this->formatDate(trim($data[7]));
 		$this->parse[$key]['edu'] = mb_strtolower($data[3], 'utf-8');
 		$this->parse[$key]['shift'] = mb_strtolower($data[4], 'utf-8');
 		$this->parse[$key]['time'] = mb_strtolower($data[5], 'utf-8');
+	}
+
+	private function parseDesc($data, $key) {
+		$this->parse[$key]['desc'] = '';
+		if (preg_match("/\((\.\s)?(.*)\)/ui", $data, $matches)) {
+			$this->parse[$key]['desc'] = $matches;
+			// $this->parse[$key]['vacancy'] = str_replace($matches[0], '', $data);
+			// $this->parse[$key]['desc'] = isset($matches[2]) ? $matches[2] : '';
+		}
 	}
 
 	private function parseEmail($data, $key) {
@@ -72,6 +87,7 @@ class ParseExcelJob {
 			$this->parse[$key]['email'] = $email;
 			$this->parse[$key]['site'] = $site;
 		}
+		return $data;
 	}
 
 	private function parsePhone($data, $key) {
@@ -80,6 +96,7 @@ class ParseExcelJob {
 			$data = str_replace($phone, '', $data);
 			$this->parse[$key]['phone'] = trim($phone);
 		}
+		return $data;
 	}
 
 	private function parseLocation($data, $key) {
@@ -97,7 +114,7 @@ class ParseExcelJob {
 			$data = preg_replace($loc, '', $data);
 			$this->parse[$key]['locate'] = "д. " . mb_convert_case(trim($matches[2]), MB_CASE_TITLE, 'utf-8');
 		}
-		return true;
+		return $data;
 	}
 
 	private function parseAddress($data, $key) {
