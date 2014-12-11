@@ -50,7 +50,7 @@ class ParseExcelJob {
 
 	private function formatDate($date) {
 		// return $date;
-		return DateTime::createFromFormat('d.m.Y', $date)->format('Y-m-d');
+		return DateTime::createFromFormat('d.m.Y H:i:s', $date." 12:00:00");
 	}
 
 	private function parseCommon($data, $key) {
@@ -61,6 +61,9 @@ class ParseExcelJob {
 		$this->parse[$key]['edu'] = mb_strtolower($data[3], 'utf-8');
 		$this->parse[$key]['shift'] = mb_strtolower($data[4], 'utf-8');
 		$this->parse[$key]['time'] = mb_strtolower($data[5], 'utf-8');
+		$this->parse[$key]['stage'] = '';
+		$this->parse[$key]['expiry'] = '';
+		$this->parse[$key]['contact'] = ['address'=>'', 'phone'=>'', 'email'=>'', 'site'=>'', 'name'=>''];
 	}
 
 	private function parseDesc($data, $key) {
@@ -84,8 +87,8 @@ class ParseExcelJob {
 					$site .=  (empty($site) ? '' : ', ') . strtolower(trim($value));	
 				}
 			}
-			$this->parse[$key]['email'] = $email;
-			$this->parse[$key]['site'] = $site;
+			$this->parse[$key]['contact']['email'] = $email;
+			$this->parse[$key]['contact']['site'] = $site;
 		}
 		return $data;
 	}
@@ -94,7 +97,7 @@ class ParseExcelJob {
 		if (preg_match("/([\d\-]{6,11})+/iu", $data, $matches, PREG_OFFSET_CAPTURE)) {
 			$phone = substr($data, $matches[0][1]);
 			$data = str_replace($phone, '', $data);
-			$this->parse[$key]['phone'] = trim($phone);
+			$this->parse[$key]['contact']['phone'] = trim($phone);
 		}
 		return $data;
 	}
@@ -126,7 +129,8 @@ class ParseExcelJob {
 			}
 			return mb_strtolower($matches[1], 'utf-8');
 		}, $data);
-		$this->parse[$key]['address'] = $address;
+		$this->parse[$key]['contact']['address'] = $this->parse[$key]['locate'].", ".$address;
+		unset($this->parse[$key]['locate']);
 	}
 
 	private function sanitizeData($data) {
