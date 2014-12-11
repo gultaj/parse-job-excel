@@ -43,7 +43,7 @@ class ParseExcelJob {
 			if (!($data = $this->parseLocation($data, $key))) continue;
 			$data = $this->sanitizeData($data);
 			$this->parseAddress($data, $key);
-			$this->parseDesc($vacancy[2], $key);
+			//$this->parseDesc($vacancy[2], $key);
 		}
 		return $this;
 	}
